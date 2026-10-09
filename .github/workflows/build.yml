@@ -1,0 +1,12 @@
+name: build
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD":/src -w /src ghcr.io/pspdev/pspdev:latest make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: psp_clarity
+          path: psp_clarity.prx
