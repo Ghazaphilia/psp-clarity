@@ -50,6 +50,9 @@ static int  prev_valid = 0;
 static int  osd_frames = 0;
 static u32  last_buttons = 0;
 
+/* libpspdebug needs this symbol; VRAM always starts at 0x04000000 */
+void *sceGeEdramGetAddr(void) { return (void *)0x04000000; }
+
 static u8 buf_a[ROW_BYTES], buf_b[ROW_BYTES], buf_c[ROW_BYTES], out_row[ROW_BYTES];
 
 /* ------------------------------------------------------------------ */
@@ -172,20 +175,34 @@ static void save_cfg(void)
     if (fd >= 0) { sceIoWrite(fd, buf, len); sceIoClose(fd); }
 }
 
+/* tiny parser: finds "key=" in buf and returns the number after it */
+static int parse_key(const char *buf, const char *key, int def)
+{
+    int i, j;
+    for (i = 0; buf[i]; i++) {
+        for (j = 0; key[j] && buf[i + j] == key[j]; j++) ;
+        if (!key[j]) {
+            int v = 0;
+            const char *p = buf + i + j;
+            if (*p < '0' || *p > '9') return def;
+            while (*p >= '0' && *p <= '9') { v = v * 10 + (*p - '0'); p++; }
+            return v;
+        }
+    }
+    return def;
+}
+
 static void load_cfg(void)
 {
     char buf[64];
-    int e, s, o;
     SceUID fd = sceIoOpen(CFG_PATH, PSP_O_RDONLY, 0);
     if (fd < 0) return;
     memset(buf, 0, sizeof(buf));
     sceIoRead(fd, buf, sizeof(buf) - 1);
     sceIoClose(fd);
-    if (sscanf(buf, "enabled=%d\nsharp=%d\nod=%d", &e, &s, &o) == 3) {
-        cfg.enabled = e ? 1 : 0;
-        cfg.sharp   = clampl(s);
-        cfg.od      = clampl(o);
-    }
+    cfg.enabled = parse_key(buf, "enabled=", 1) ? 1 : 0;
+    cfg.sharp   = clampl(parse_key(buf, "sharp=", 3));
+    cfg.od      = clampl(parse_key(buf, "od=", 3));
 }
 
 /* ------------------------------------------------------------------ */
