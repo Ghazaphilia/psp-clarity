@@ -240,7 +240,7 @@ static void draw_osd(void *vram, int pf)
 
     pspDebugScreenInitEx(vram, pf, 0);          /* no mode change */
     pspDebugScreenSetBackColor(0xFF000000);
-    pspDebugScreenEnableBackColor();
+    pspDebugScreenEnableBackColor(1);
 
     snprintf(line, sizeof(line), " PSP Clarity: %s ", cfg.enabled ? "ON " : "OFF");
     osd_puts(4, 4, line);
